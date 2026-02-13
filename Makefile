@@ -1,4 +1,4 @@
-VERSION := 1.4.2# x-release-please-version
+VERSION := 1.4.3# x-release-please-version
 
 export AWS_MAX_ATTEMPTS=120
 export AWS_POLL_DELAY_SECONDS=15
