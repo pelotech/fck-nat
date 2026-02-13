@@ -1,0 +1,67 @@
+name: Release Please
+
+on: push
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      environments: ${{ steps.set-env.outputs.names }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: googleapis/release-please-action@16a9c90856f42705d54a6fda1823352bdc62cf38 # v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      - name: Get Environments
+        uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d # v2
+        id: get-env
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          route: GET /repos/${{ github.repository }}/environments
+      - name: Extract environment names and set as output
+        id: set-env
+        env:
+          ENV_DATA: ${{ steps.get-env.outputs.data }}
+        run: |
+          ENV_NAMES=$(echo "$ENV_DATA" | jq -c '.environments | map(.name)')
+          echo "names=$ENV_NAMES" >> "$GITHUB_OUTPUT"
+  packer:
+    if: ${{ fromJSON(needs.release-please.outputs.releases_created) }}
+    needs: release-please
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.release-please.outputs.environments) }}
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+      - name: Install rpm and fpm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+          sudo gem install --no-document fpm
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: make release
+        run: |
+          packer init packer/fck-nat.pkr.hcl 
+          make ${{ vars.MAKE_TARGET }} regions_file="${{ vars.REGIONS_FILE }}"
+      
+
+
