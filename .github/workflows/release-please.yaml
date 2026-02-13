@@ -1,7 +1,5 @@
 name: Release Please
-
 on: push
-
 permissions:
   id-token: write
   contents: write
@@ -40,6 +38,7 @@ jobs:
     needs: release-please
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         environment: ${{ fromJson(needs.release-please.outputs.environments) }}
     environment: ${{ matrix.environment }}
