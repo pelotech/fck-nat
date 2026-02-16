@@ -1,0 +1,59 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": true,
+  "include-v-in-tag": false,
+  "tag-separator": "/",
+  "release-type": "simple",
+  "skip-changelog": true,
+  "bootstrap-sha": "8e519c26b6321bf0c443497ad7ead1cd8c2e0611",
+  "packages": {
+    ".": {
+      "extra-files": [
+        "packer/fck-nat.pkr.hcl",
+        "Makefile"
+      ]
+    }
+    },
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "perf",
+      "section": "Refactor"
+    },
+    {
+      "type": "refactor",
+      "section": "Refactor"
+    },
+    {
+      "type": "chore",
+      "section": "Chores"
+    },
+    {
+      "type": "ci",
+      "section": "Chores"
+    },
+    {
+      "type": "build",
+      "section": "Chores"
+    },
+    {
+      "type": "style",
+      "section": "Chores"
+    },
+    {
+      "type": "docs",
+      "section": "Docs"
+    },
+    {
+      "type": "test",
+      "section": "Test"
+    }
+  ]
+}
