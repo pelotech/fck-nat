@@ -12,22 +12,22 @@ variable "version" {
 }
 
 variable "ami_regions" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
 variable "ami_users" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
 variable "ami_groups" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
 variable "snapshot_groups" {
-  type = list(string)
+  type    = list(string)
   default = []
 }
 
@@ -90,6 +90,8 @@ locals {
     ssh_username              = var.ssh_username
     ssh_clear_authorized_keys = true
     temporary_key_pair_type   = "ed25519"
+    ena_support               = true
+    imds_support              = "v2.0"
   }
 
   launch_block_device_mapping = {
@@ -122,6 +124,8 @@ source "amazon-ebs" "fck-nat" {
   ssh_username              = local.common_source.ssh_username
   ssh_clear_authorized_keys = local.common_source.ssh_clear_authorized_keys
   temporary_key_pair_type   = local.common_source.temporary_key_pair_type
+  ena_support               = local.common_source.ena_support
+  imds_support              = local.common_source.imds_support
   dynamic "launch_block_device_mappings" {
     for_each = [local.launch_block_device_mapping]
     content {
@@ -152,6 +156,8 @@ source "amazon-ebs" "fck-nat-nat64" {
   ssh_username              = local.common_source.ssh_username
   ssh_clear_authorized_keys = local.common_source.ssh_clear_authorized_keys
   temporary_key_pair_type   = local.common_source.temporary_key_pair_type
+  ena_support               = local.common_source.ena_support
+  imds_support              = local.common_source.imds_support
   dynamic "launch_block_device_mappings" {
     for_each = [local.launch_block_device_mapping]
     content {
@@ -171,7 +177,7 @@ source "amazon-ebs" "fck-nat-nat64" {
 }
 
 build {
-  name = "fck-nat"
+  name    = "fck-nat"
   sources = ["source.amazon-ebs.fck-nat", "source.amazon-ebs.fck-nat-nat64"]
 
   # Install updates
@@ -186,7 +192,7 @@ build {
   # Install jool for NAT64
   provisioner "shell" {
     start_retry_timeout = "2m"
-    only = ["amazon-ebs.fck-nat-nat64"]
+    only                = ["amazon-ebs.fck-nat-nat64"]
     inline = [
       "sudo yum install gcc make elfutils-libelf-devel kernel6.12-devel-`uname -r` kernel6.12-headers-`uname -r` libnl3-devel iptables-devel dkms -y",
       "curl -L https://github.com/NICMx/Jool/releases/download/v${var.jool_version}/jool-${var.jool_version}.tar.gz -o- | tar xzf - --directory /tmp",
@@ -199,7 +205,7 @@ build {
   }
 
   provisioner "file" {
-    source = "build/fck-nat-${var.version}-any.rpm"
+    source      = "build/fck-nat-${var.version}-any.rpm"
     destination = "/tmp/fck-nat-${var.version}-any.rpm"
   }
 
@@ -226,5 +232,8 @@ build {
       "sudo dnf update kpatch-runtime",
       "sudo systemctl enable kpatch.service && sudo systemctl start kpatch.service",
     ]
+  }
+  provisioner "shell" {
+    script = "scripts/cleanup.sh"
   }
 }
